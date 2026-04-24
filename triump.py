@@ -8,6 +8,7 @@ Keys:  GROQ_API_KEY, EXA_API_KEY  (set as env vars or via Render)
 
 import datetime
 import json
+import os
 
 import streamlit as st
 
@@ -71,9 +72,13 @@ with st.sidebar:
     st.divider()
 
     st.markdown("**Speech input** (Groq Whisper — same key)")
+    # Hosted environments should use browser capture instead of server-side microphone recording.
+    is_render = bool(os.getenv("RENDER"))
     if MIC_AVAILABLE:
         rec_dur = st.slider("Record seconds", 3, 20, 8)
-        use_mic = st.checkbox("Enable microphone")
+        use_mic = st.checkbox("Enable microphone", disabled=is_render)
+        if is_render:
+            st.caption("Hosted mode detected. Use browser microphone below.")
     else:
         st.caption("pip install sounddevice scipy for mic input")
         use_mic = False
@@ -190,6 +195,21 @@ Getting worse &rarr; intensity increases to force correction.
                     wav_bytes = record_mic(rec_dur)
                 with st.spinner("Transcribing via Groq Whisper Large v3 Turbo..."):
                     transcribed = transcribe_audio(wav_bytes, groq_key)
+                if "error" in transcribed.lower():
+                    st.error(transcribed)
+                else:
+                    st.session_state.transcribed_text = transcribed
+                    st.success(f"Heard: {transcribed}")
+
+    # Browser-recorded audio works on hosted deployments like Render.
+    browser_audio = st.audio_input("Record from browser microphone")
+    if browser_audio is not None:
+        if st.button("🎧 Transcribe browser audio", use_container_width=True):
+            if not groq_key:
+                st.error("Groq key required for Whisper transcription.")
+            else:
+                with st.spinner("Transcribing browser audio via Groq Whisper Large v3 Turbo..."):
+                    transcribed = transcribe_audio(browser_audio.getvalue(), groq_key)
                 if "error" in transcribed.lower():
                     st.error(transcribed)
                 else:

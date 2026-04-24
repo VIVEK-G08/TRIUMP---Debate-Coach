@@ -11,7 +11,7 @@ try:
     import numpy as np
     import scipy.io.wavfile as wavfile
     MIC_AVAILABLE = True
-except ImportError:
+except Exception:
     MIC_AVAILABLE = False
 
 try:
