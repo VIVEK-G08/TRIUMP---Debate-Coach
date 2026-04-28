@@ -34,10 +34,12 @@ def call_groq_llm(prompt, api_key, retries=3):
             r.raise_for_status()
             return r.json()["choices"][0]["message"]["content"]
         except requests.exceptions.HTTPError as e:
-            if r.status_code == 429:
+            if e.response is not None and e.response.status_code == 429:
                 time.sleep(2 ** attempt)
                 continue
-            return f"ERROR {r.status_code}: {r.text[:200]}"
+            status = e.response.status_code if e.response is not None else "Unknown"
+            text = e.response.text[:200] if e.response is not None else str(e)
+            return f"ERROR {status}: {text}"
         except Exception as e:
             if attempt == retries - 1:
                 return f"ERROR: {e}"
@@ -54,6 +56,10 @@ def extract_json(raw):
             pass
     return {
         "counterargument": cleaned[:600] if cleaned else "No usable output.",
+        "summary": "Failed to parse model response.",
+        "reframed_argument": "",
+        "learning_summary": "",
+        "improvement_tips": ["Try to formulate a clearer argument."],
         "flaws": [], "facts": [],
         "strength_score": 0, "strength_label": "unknown",
         "fallacy_count": 0, "fallacy_types": [],

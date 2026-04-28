@@ -326,7 +326,7 @@ Getting worse &rarr; intensity increases to force correction.
             "timestamp": datetime.datetime.now().isoformat()
         }
 
-if st.session_state.current_result:
+if st.session_state.get("current_result"):
     display = st.session_state.current_result
     result = display["result"]
     exa_results = display.get("exa_results", [])
@@ -459,7 +459,7 @@ if st.session_state.current_result:
         # Clear the persistent result so the UI returns to the input state.
         st.session_state.current_result = None
         st.session_state.current_argument = ""
-        st.experimental_rerun()
+        st.rerun()
 
 with col_log:
     st.markdown("### Debate journal")
